@@ -1,0 +1,60 @@
+---
+title: "explore"
+output: github_document
+date: "2025-11-25"
+---
+```{r}
+library(tidyverse)
+library(dplyr)
+```
+## Loading in data
+```{r}
+object_names = load("tedsa_puf_2006_2023.rdata")
+```
+
+```{r}
+teds_a = get(object_names[1])
+```
+
+```{r}
+glimpse(teds_a)
+```
+Filtering to years >2010
+```{r}
+teds_a_2010_2023 = teds_a |> 
+  filter(ADMYR >= 2010)
+```
+
+```{r}
+glimpse(teds_a_2010_2023)
+```
+
+
+## Preparing opioid admissions by state and year table
+```{r creating opioid_admissions_panel}
+# Defining the substance codes for the opioids to count
+  # 5 = Heroin; 6 = Non-prescription methadone; 7 = Other opiates
+
+opioid_codes = c(5, 6, 7)
+
+# filtering the data to include ONLY admissions where SUB1, SUB2, OR SUB3 is an opioid
+teds_a_opioid_only = teds_a_2010_2023 |> 
+  # Use the logical OR operator (|) to check if the substance code is present in ANY of the three columns
+  filter(SUB1 %in% opioid_codes | 
+         SUB2 %in% opioid_codes | 
+         SUB3 %in% opioid_codes)
+
+# Aggregating the resulting opioid admissions by State and Year
+opioid_admissions_panel = teds_a_opioid_only |> 
+  # Group the data by the state identifier and admission year
+  group_by(STFIPS, ADMYR) |> 
+  # Summarise the data by counting the number of rows (admissions) in each group
+  summarise(
+    Opioid_Admissions_Count = n(),
+    .groups = 'drop' 
+  )
+
+# View the final opioid panel structure
+view(opioid_admissions_panel)
+```
+
